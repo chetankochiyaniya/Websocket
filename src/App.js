@@ -13,37 +13,69 @@ import { useEffect } from 'react';
 
 function App() {
 
-    useEffect(()=>{
-
-    })
-
     new SocketHandler();
     var tableObj = null;
+    const tableMap = new Map();
+
+    const useDataFun =
+        (e) => {
+            console.log("In the users listener", Object.values(e.detail));
+            const jsonArr = Object.values(e.detail);
+            console.log(e.detail);
+            for (let i = 0; i < jsonArr.length; i++) {
+                let obj = jsonArr[i];
+                if(tableMap.has(obj.user_id))
+                {
+                    const rowNumber = tableMap.get(obj.user_id);
+                    tableObj.row(rowNumber).data([obj.user_id,
+                        obj.username,
+                        obj.master_id,
+                        obj.credit_limit,
+                        obj.leverage_limit,
+                        obj.notification_limit,
+                        obj.extra_credit_limit,
+                        obj.auto_square_off,
+                        obj.current_profit_loss,
+                        obj.total_pnl]).draw();
+                }
+                else{
+                    tableMap.set(obj.user_id,tableObj.rows().count());
+                    console.log(obj.user_id,tableObj.rows().count());
+                    tableObj.row.add([obj.user_id,
+                        obj.username,
+                        obj.master_id,
+                        obj.credit_limit,
+                        obj.leverage_limit,
+                        obj.notification_limit,
+                        obj.extra_credit_limit,
+                        obj.auto_square_off,
+                        obj.current_profit_loss,
+                        obj.total_pnl]).draw();
+                }
+                // console.log(obj.master_id);
+                
+            }
+    }
+
+    useEffect(() => {
+        document.addEventListener('usersdata', useDataFun,false);
+    
+        // cleanup this component
+        return () => {
+            document.removeEventListener('usersdata', useDataFun,false);
+        };
+      }, []);
+
+
+
+
 
     document.addEventListener('mastersdata', (e) => {
         console.log("In the masters listener", e.detail);
     }, false);
 
-    document.addEventListener('usersdata', (e) => {
-        console.log("In the users listener", Object.values(e.detail));
-        const jsonArr =  Object.values(e.detail);
-        console.log(e.detail);
-        for(let i = 0; i < jsonArr.length; i++) {
-            let obj = jsonArr[i];
-            // console.log(obj.master_id);
-            tableObj.row.add([obj.user_id,
-                obj.username,
-                obj.master_id,
-                obj.credit_limit,
-                obj.leverage_limit,
-                obj.notification_limit,
-                obj.extra_credit_limit,
-                obj.auto_square_off,
-                obj.current_profit_loss,
-                obj.total_pnl]).draw();
-        }
 
-    }, false);
+
 
     const apiCall = {
         "event": "usersdata",
@@ -59,9 +91,9 @@ function App() {
         }
     }, false);
 
-    
+
     $(document).ready(function () {
-        if(tableObj == null){
+        if (tableObj == null) {
             tableObj = $('#example').DataTable();
             console.log("asdasdasdasd");
         }
